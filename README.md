@@ -152,15 +152,11 @@ CALCULA busca reunir herramientas de cálculo matemático en una interfaz accesi
 
 Desarrollado como proyecto académico de programación.
 
-- **Autor:** `Tu nombre`
-- **Institución:** `Tu universidad` (opcional)
-- **Repositorio:** `https://github.com/USUARIO/CALCULA`
+- **Autores:** `Juan Gaspar Manuel Pablo Sisay`
+               `Henry Bernabé Chiroy Sulugüí`
+               `Guillermo Josue Garcia de Leon`
+- **Institución:** `Universidad Mariano Gálvez de Guatemala` (opcional)
 
-## Licencia
-
-Este proyecto no especifica actualmente una licencia. Si deseas permitir que otras personas reutilicen, modifiquen o distribuyan el código, agrega una licencia adecuada antes de presentarlo como software de código abierto.
-
----
 
 <div align="center">
   <sub>CALCULA · Laboratorio Matemático</sub>
