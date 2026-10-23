@@ -26,8 +26,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 public class PanelDerivadas extends JPanel {
 
@@ -44,7 +42,7 @@ public class PanelDerivadas extends JPanel {
     private CampoTexto campoFuncion;
     private ComboRedondeado<String> selectorVariable;
     private JLabel resultado;
-    private JLabel vistaPreviaFuncion;
+    private VistaPreviaMatematica vistaPrevia;
     private JLabel estado;
     private IndicadorEstado indicadorEstado;
     private JPanel pasosMatematicos;
@@ -113,12 +111,12 @@ public class PanelDerivadas extends JPanel {
     // ------------------------------------------------------------------
     private JPanel crearBanner() {
         PanelDegradado banner = new PanelDegradado(
-                28, new Color(13, 31, 47), new Color(28, 20, 53));
+                22, new Color(13, 31, 47), new Color(28, 20, 53));
         // Halos invertidos respecto a Integrales: cian arriba, violeta abajo.
         banner.setHalos(Tema.CIAN, Tema.VIOLETA);
         banner.setLayout(new BorderLayout(20, 0));
-        banner.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        banner.setPreferredSize(new Dimension(0, 132));
+        banner.setBorder(BorderFactory.createEmptyBorder(14, 28, 14, 28));
+        banner.setPreferredSize(new Dimension(0, 124));
 
         EtiquetaPastilla insignia = new EtiquetaPastilla(
                 "CÁLCULO DIFERENCIAL",
@@ -130,7 +128,7 @@ public class PanelDerivadas extends JPanel {
         insignia.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel titulo = new JLabel("Calculadora de derivadas");
-        titulo.setFont(Tema.fuente(Font.BOLD, 26));
+        titulo.setFont(Tema.fuente(Font.BOLD, 24));
         titulo.setForeground(Tema.TEXTO);
         titulo.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -170,38 +168,25 @@ public class PanelDerivadas extends JPanel {
                 "01", "Configurar derivada", ACENTO));
         tarjeta.add(Box.createVerticalStrut(22));
 
-        // Función
-        tarjeta.add(Tema.crearEtiquetaCampo("Función matemática"));
+        // Vista previa arriba: así la ecuación se ve mientras se escribe.
+        tarjeta.add(Tema.crearEtiquetaCampo("Vista previa matemática"));
         tarjeta.add(Box.createVerticalStrut(8));
+        vistaPrevia = new VistaPreviaMatematica(84, 26);
+        tarjeta.add(vistaPrevia);
+        tarjeta.add(Box.createVerticalStrut(16));
 
+        // Función (con teclado matemático)
         campoFuncion = new CampoTexto();
         campoFuncion.setAcento(ACENTO);
         campoFuncion.setCaretColor(Tema.VIOLETA);
         campoFuncion.setFont(Tema.fuenteMono(Font.PLAIN, 16));
-        campoFuncion.setPreferredSize(new Dimension(100, 48));
-        campoFuncion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        campoFuncion.setAlignmentX(LEFT_ALIGNMENT);
+        vistaPrevia.vincular(campoFuncion);
         campoFuncion.addActionListener(e -> calcularDerivada());
-        tarjeta.add(campoFuncion);
-        tarjeta.add(Box.createVerticalStrut(8));
+        tarjeta.add(new TecladoMatematico(
+                campoFuncion, ACENTO, this::calcularDerivada));
+        tarjeta.add(Box.createVerticalStrut(10));
 
         tarjeta.add(crearFilaEjemplo());
-        tarjeta.add(Box.createVerticalStrut(18));
-
-        // Vista previa
-        tarjeta.add(Tema.crearEtiquetaCampo("Vista previa matemática"));
-        tarjeta.add(Box.createVerticalStrut(8));
-
-        vistaPreviaFuncion = new JLabel("La expresión aparecerá aquí.");
-        vistaPreviaFuncion.setOpaque(false);
-        vistaPreviaFuncion.setHorizontalAlignment(JLabel.LEFT);
-
-        RoundedPanel cajaVistaPrevia = Tema.crearCajaInterior(60, Tema.BORDE);
-        cajaVistaPrevia.add(vistaPreviaFuncion, BorderLayout.CENTER);
-        tarjeta.add(cajaVistaPrevia);
-        configurarVistaPrevia();
-        actualizarVistaPrevia();
-
         tarjeta.add(Box.createVerticalStrut(20));
 
         // Variable
@@ -258,40 +243,6 @@ public class PanelDerivadas extends JPanel {
         fila.add(ejemplo);
         fila.add(Box.createHorizontalGlue());
         return Tema.fijarAlto(fila);
-    }
-
-    private void configurarVistaPrevia() {
-        campoFuncion.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-        });
-    }
-
-    private void actualizarVistaPrevia() {
-        String expresion = campoFuncion.getText().trim();
-        if (expresion.isEmpty()) {
-            vistaPreviaFuncion.setIcon(null);
-            vistaPreviaFuncion.setText("La expresión aparecerá aquí.");
-            vistaPreviaFuncion.setFont(Tema.fuente(Font.ITALIC, 13));
-            vistaPreviaFuncion.setForeground(Tema.TEXTO_SECUNDARIO);
-        } else {
-            RenderizadorMatematico.actualizarEtiqueta(
-                    vistaPreviaFuncion, expresion, Tema.TEXTO, 20);
-        }
-        vistaPreviaFuncion.revalidate();
-        vistaPreviaFuncion.repaint();
     }
 
     // ------------------------------------------------------------------
@@ -510,7 +461,7 @@ public class PanelDerivadas extends JPanel {
     // ------------------------------------------------------------------
     private JPanel crearTarjeta() {
         TarjetaSeccion tarjeta
-                = new TarjetaSeccion(24, Tema.PANEL, ACENTO);
+                = new TarjetaSeccion(18, Tema.PANEL, ACENTO);
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createEmptyBorder(26, 24, 24, 24));
         tarjeta.setAlignmentX(LEFT_ALIGNMENT);

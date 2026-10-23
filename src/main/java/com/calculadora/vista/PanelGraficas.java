@@ -1,5 +1,6 @@
 package com.calculadora.vista;
 
+import com.calculadora.matematicas.EvaluadorNumerico;
 import com.calculadora.vista.Tema.BotonRedondeado;
 import com.calculadora.vista.Tema.CampoTexto;
 import com.calculadora.vista.Tema.ComboRedondeado;
@@ -8,7 +9,6 @@ import com.calculadora.vista.Tema.IndicadorEstado;
 import com.calculadora.vista.Tema.OpcionSegmentada;
 import com.calculadora.vista.Tema.PaginaDesplazable;
 import com.calculadora.vista.Tema.PanelDegradado;
-import com.calculadora.vista.Tema.RoundedPanel;
 import com.calculadora.vista.Tema.TarjetaSeccion;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -24,6 +24,9 @@ import java.awt.Shape;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -34,8 +37,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.SwingUtilities;
 import org.matheclipse.core.eval.ExprEvaluator;
 import org.matheclipse.core.interfaces.IExpr;
 
@@ -71,7 +73,7 @@ public class PanelGraficas extends JPanel {
     private JRadioButton opcionSoloCurva;
     private JRadioButton opcionSombrearArea;
     private JPanel panelLimites;
-    private JLabel vistaPreviaFuncion;
+    private VistaPreviaMatematica vistaPrevia;
     private JLabel estado;
     private IndicadorEstado indicadorEstado;
     private GraficaCanvas grafica;
@@ -118,12 +120,12 @@ public class PanelGraficas extends JPanel {
     // ------------------------------------------------------------------
     private JPanel crearBanner() {
         PanelDegradado banner = new PanelDegradado(
-                28, new Color(12, 38, 36), new Color(28, 20, 53));
+                22, new Color(12, 38, 36), new Color(28, 20, 53));
         banner.setHalos(ACENTO, Tema.VIOLETA);
         banner.setLayout(new BorderLayout(20, 0));
-        banner.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        banner.setPreferredSize(new Dimension(0, 132));
-        banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 132));
+        banner.setBorder(BorderFactory.createEmptyBorder(14, 28, 14, 28));
+        banner.setPreferredSize(new Dimension(0, 124));
+        banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 124));
         banner.setAlignmentX(LEFT_ALIGNMENT);
 
         EtiquetaPastilla insignia = new EtiquetaPastilla(
@@ -136,7 +138,7 @@ public class PanelGraficas extends JPanel {
         insignia.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel titulo = new JLabel("Gráficas de funciones");
-        titulo.setFont(Tema.fuente(Font.BOLD, 26));
+        titulo.setFont(Tema.fuente(Font.BOLD, 24));
         titulo.setForeground(Tema.TEXTO);
         titulo.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -175,40 +177,37 @@ public class PanelGraficas extends JPanel {
         tarjeta.add(Tema.crearTituloSeccion("01", "Configurar gráfica", ACENTO));
         tarjeta.add(Box.createVerticalStrut(22));
 
-        // Función
-        tarjeta.add(Tema.crearEtiquetaCampo("Función matemática"));
-        tarjeta.add(Box.createVerticalStrut(8));
+        // Dos columnas: el teclado a la izquierda y el resto de opciones
+        // a la derecha, para que las teclas conserven buenas proporciones.
+        JPanel izquierda = new JPanel();
+        izquierda.setOpaque(false);
+        izquierda.setLayout(new BoxLayout(izquierda, BoxLayout.Y_AXIS));
 
+        JPanel derecha = new JPanel();
+        derecha.setOpaque(false);
+        derecha.setLayout(new BoxLayout(derecha, BoxLayout.Y_AXIS));
+
+        // Función (con teclado matemático)
         campoFuncion = new CampoTexto();
         campoFuncion.setAcento(ACENTO);
         campoFuncion.setCaretColor(Tema.VIOLETA);
         campoFuncion.setText("x^2");
         campoFuncion.setFont(Tema.fuenteMono(Font.PLAIN, 16));
-        campoFuncion.setPreferredSize(new Dimension(100, 48));
-        campoFuncion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        campoFuncion.setAlignmentX(LEFT_ALIGNMENT);
         campoFuncion.addActionListener(e -> graficarFuncion());
-        tarjeta.add(campoFuncion);
-        tarjeta.add(Box.createVerticalStrut(8));
+        izquierda.add(new TecladoMatematico(
+                campoFuncion, ACENTO, this::graficarFuncion));
+        izquierda.add(Box.createVerticalStrut(10));
 
-        tarjeta.add(crearFilaEjemplo());
-        tarjeta.add(Box.createVerticalStrut(18));
+        izquierda.add(crearFilaEjemplo());
 
         // Vista previa
-        tarjeta.add(Tema.crearEtiquetaCampo("Vista previa matemática"));
-        tarjeta.add(Box.createVerticalStrut(8));
+        derecha.add(Tema.crearEtiquetaCampo("Vista previa matemática"));
+        derecha.add(Box.createVerticalStrut(8));
+        vistaPrevia = new VistaPreviaMatematica(72, 22);
+        derecha.add(vistaPrevia);
+        vistaPrevia.vincular(campoFuncion);
 
-        vistaPreviaFuncion = new JLabel();
-        vistaPreviaFuncion.setOpaque(false);
-        vistaPreviaFuncion.setHorizontalAlignment(JLabel.LEFT);
-
-        RoundedPanel cajaVistaPrevia = Tema.crearCajaInterior(60, Tema.BORDE);
-        cajaVistaPrevia.add(vistaPreviaFuncion, BorderLayout.CENTER);
-        tarjeta.add(cajaVistaPrevia);
-        configurarVistaPrevia();
-        actualizarVistaPrevia();
-
-        tarjeta.add(Box.createVerticalStrut(20));
+        derecha.add(Box.createVerticalStrut(20));
 
         // Variable e intervalo gráfico
         selectorVariable = new ComboRedondeado<>(new String[]{"x", "y"});
@@ -226,12 +225,12 @@ public class PanelGraficas extends JPanel {
         fila.add(crearColumnaCampo("Variable", selectorVariable));
         fila.add(crearColumnaCampo("Intervalo mínimo", campoMinimo));
         fila.add(crearColumnaCampo("Intervalo máximo", campoMaximo));
-        tarjeta.add(Tema.fijarAlto(fila));
-        tarjeta.add(Box.createVerticalStrut(20));
+        derecha.add(Tema.fijarAlto(fila));
+        derecha.add(Box.createVerticalStrut(20));
 
         // Modo de representación
-        tarjeta.add(Tema.crearEtiquetaCampo("Representación"));
-        tarjeta.add(Box.createVerticalStrut(8));
+        derecha.add(Tema.crearEtiquetaCampo("Representación"));
+        derecha.add(Box.createVerticalStrut(8));
 
         opcionSoloCurva = new OpcionSegmentada("Solo la curva", ACENTO);
         opcionSombrearArea = new OpcionSegmentada(
@@ -250,17 +249,17 @@ public class PanelGraficas extends JPanel {
         opciones.add(Box.createHorizontalStrut(10));
         opciones.add(opcionSombrearArea);
         opciones.add(Box.createHorizontalGlue());
-        tarjeta.add(Tema.fijarAlto(opciones));
+        derecha.add(Tema.fijarAlto(opciones));
 
         // Límites del área (solo con el sombreado activo)
         panelLimites = crearPanelLimites();
-        tarjeta.add(panelLimites);
+        derecha.add(panelLimites);
 
         opcionSoloCurva.addActionListener(e -> actualizarLimites());
         opcionSombrearArea.addActionListener(e -> actualizarLimites());
         actualizarLimites();
 
-        tarjeta.add(Box.createVerticalStrut(26));
+        derecha.add(Box.createVerticalStrut(26));
 
         BotonRedondeado botonGraficar
                 = new BotonRedondeado("Graficar función   →", 24);
@@ -271,7 +270,22 @@ public class PanelGraficas extends JPanel {
         botonGraficar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         botonGraficar.setAlignmentX(LEFT_ALIGNMENT);
         botonGraficar.addActionListener(e -> graficarFuncion());
-        tarjeta.add(botonGraficar);
+        derecha.add(botonGraficar);
+
+        JPanel columnaIzquierda = new JPanel(new BorderLayout());
+        columnaIzquierda.setOpaque(false);
+        columnaIzquierda.add(izquierda, BorderLayout.NORTH);
+
+        JPanel columnaDerecha = new JPanel(new BorderLayout());
+        columnaDerecha.setOpaque(false);
+        columnaDerecha.add(derecha, BorderLayout.NORTH);
+
+        JPanel columnas = new JPanel(new GridLayout(1, 2, 28, 0));
+        columnas.setOpaque(false);
+        columnas.setAlignmentX(LEFT_ALIGNMENT);
+        columnas.add(columnaIzquierda);
+        columnas.add(columnaDerecha);
+        tarjeta.add(columnas);
 
         return tarjeta;
     }
@@ -303,40 +317,6 @@ public class PanelGraficas extends JPanel {
         fila.add(ejemplo);
         fila.add(Box.createHorizontalGlue());
         return Tema.fijarAlto(fila);
-    }
-
-    private void configurarVistaPrevia() {
-        campoFuncion.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-        });
-    }
-
-    private void actualizarVistaPrevia() {
-        String expresion = campoFuncion.getText().trim();
-        if (expresion.isEmpty()) {
-            vistaPreviaFuncion.setIcon(null);
-            vistaPreviaFuncion.setText("La expresión aparecerá aquí.");
-            vistaPreviaFuncion.setFont(Tema.fuente(Font.ITALIC, 13));
-            vistaPreviaFuncion.setForeground(Tema.TEXTO_SECUNDARIO);
-        } else {
-            RenderizadorMatematico.actualizarEtiqueta(
-                    vistaPreviaFuncion, expresion, Tema.TEXTO, 20);
-        }
-        vistaPreviaFuncion.revalidate();
-        vistaPreviaFuncion.repaint();
     }
 
     private JPanel crearPanelLimites() {
@@ -441,7 +421,7 @@ public class PanelGraficas extends JPanel {
 
     private JPanel crearTarjeta() {
         TarjetaSeccion tarjeta
-                = new TarjetaSeccion(24, Tema.PANEL, ACENTO);
+                = new TarjetaSeccion(18, Tema.PANEL, ACENTO);
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createEmptyBorder(26, 24, 24, 24));
         tarjeta.setAlignmentX(LEFT_ALIGNMENT);
@@ -451,6 +431,50 @@ public class PanelGraficas extends JPanel {
     // ------------------------------------------------------------------
     // Lógica de la operación (sin cambios respecto a la versión anterior)
     // ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // Lógica de la operación
+    // ------------------------------------------------------------------
+
+    /** Puntos que se calculan para la curva y para el área sombreada. */
+    private static final int MUESTRAS_CURVA = 1000;
+    private static final int MUESTRAS_AREA = 400;
+
+    /** Con el motor simbólico (más lento) se calculan menos puntos. */
+    private static final int MUESTRAS_CURVA_LENTO = 300;
+    private static final int MUESTRAS_AREA_LENTO = 120;
+
+    /**
+     * Los cálculos de la gráfica se hacen en un hilo aparte, de uno en uno:
+     * la ventana no se congela y Symja nunca se usa desde dos hilos a la vez.
+     */
+    private static final ExecutorService CALCULO
+            = Executors.newSingleThreadExecutor(tarea -> {
+                Thread hilo = new Thread(tarea, "calcula-grafica");
+                hilo.setDaemon(true);
+                return hilo;
+            });
+
+    /** Número de la última petición; las anteriores se descartan. */
+    private volatile int generacion;
+
+    /** Resultado del cálculo: el lienzo solo se encarga de dibujarlo. */
+    private static final class Datos {
+
+        String funcion;
+        String variable;
+        double minimo;
+        double maximo;
+        boolean sombrear;
+        double limiteInferior;
+        double limiteSuperior;
+        double[] ys;
+        double yMin;
+        double yMax;
+        double[] areaYs;
+        double yLimiteInferior = Double.NaN;
+        double yLimiteSuperior = Double.NaN;
+    }
+
     private void graficarFuncion() {
         String funcion = campoFuncion.getText().trim();
         String variable = selectorVariable.getSelectedItem().toString();
@@ -493,26 +517,118 @@ public class PanelGraficas extends JPanel {
                 }
             }
 
-            validarExpresion(funcion, variable, minimo, maximo);
+            validarCaracteres(funcion);
 
-            grafica.configurar(
-                    funcion, variable, minimo, maximo,
-                    sombrear, limiteInferior, limiteSuperior);
+            Datos datos = new Datos();
+            datos.funcion = funcion;
+            datos.variable = variable;
+            datos.minimo = minimo;
+            datos.maximo = maximo;
+            datos.sombrear = sombrear;
+            datos.limiteInferior = limiteInferior;
+            datos.limiteSuperior = limiteSuperior;
 
-            mostrarEstado(sombrear
-                    ? "Gráfica generada con el área entre "
-                    + limiteInferior + " y " + limiteSuperior + "."
-                    : "Gráfica generada: f(" + variable + ") = " + funcion,
-                    ACENTO);
+            int miGeneracion = ++generacion;
+            mostrarEstado("Calculando gráfica…", Tema.TEXTO_SECUNDARIO);
+
+            CALCULO.execute(() -> calcularEnSegundoPlano(datos, miGeneracion));
 
         } catch (NumberFormatException ex) {
             mostrarError("Los límites deben ser números válidos.");
         } catch (IllegalArgumentException ex) {
             mostrarError(ex.getMessage());
-        } catch (Exception ex) {
-            mostrarError("No se pudo generar la gráfica.");
-            ex.printStackTrace();
         }
+    }
+
+    /** Hilo de cálculo: muestrea la función y entrega el resultado a la interfaz. */
+    private void calcularEnSegundoPlano(Datos datos, int miGeneracion) {
+        try {
+            if (!muestrear(datos, miGeneracion)) {
+                return; // Llegó una petición más reciente.
+            }
+            SwingUtilities.invokeLater(() -> {
+                if (miGeneracion != generacion) {
+                    return;
+                }
+                grafica.aplicar(datos);
+                mostrarEstado(datos.sombrear
+                        ? "Gráfica generada con el área entre "
+                        + datos.limiteInferior + " y "
+                        + datos.limiteSuperior + "."
+                        : "Gráfica generada: f(" + datos.variable + ") = "
+                        + datos.funcion,
+                        ACENTO);
+            });
+        } catch (IllegalArgumentException ex) {
+            SwingUtilities.invokeLater(() -> {
+                if (miGeneracion == generacion) {
+                    mostrarError(ex.getMessage());
+                }
+            });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            SwingUtilities.invokeLater(() -> {
+                if (miGeneracion == generacion) {
+                    mostrarError("No se pudo generar la gráfica.");
+                }
+            });
+        }
+    }
+
+    /**
+     * Calcula todos los puntos una sola vez. Devuelve false si, mientras
+     * tanto, se pidió otra gráfica (el resultado ya no sirve).
+     */
+    private boolean muestrear(Datos d, int miGeneracion) {
+        String expresion = normalizarFuncion(d.funcion);
+
+        // Rápido: función compilada. Si la expresión usa algo que el
+        // evaluador numérico no conoce, se recurre al motor simbólico.
+        DoubleUnaryOperator f = EvaluadorNumerico.compilar(expresion, d.variable);
+        boolean rapido = f != null;
+        if (!rapido) {
+            f = x -> evaluarConSymja(expresion, d.variable, x);
+        }
+
+        int muestrasCurva = rapido ? MUESTRAS_CURVA : MUESTRAS_CURVA_LENTO;
+        int muestrasArea = rapido ? MUESTRAS_AREA : MUESTRAS_AREA_LENTO;
+
+        double[] ys = new double[muestrasCurva + 1];
+        boolean hayValorFinito = false;
+        for (int i = 0; i <= muestrasCurva; i++) {
+            if (miGeneracion != generacion) {
+                return false;
+            }
+            double x = d.minimo + (d.maximo - d.minimo) * i / muestrasCurva;
+            ys[i] = f.applyAsDouble(x);
+            hayValorFinito |= Double.isFinite(ys[i]);
+        }
+
+        if (!hayValorFinito) {
+            throw new IllegalArgumentException(
+                    "No se pudo obtener ningún valor real finito en el intervalo.");
+        }
+
+        d.ys = ys;
+        double[] rango = calcularRangoY(ys);
+        d.yMin = rango[0];
+        d.yMax = rango[1];
+
+        if (d.sombrear) {
+            double[] area = new double[muestrasArea + 1];
+            for (int i = 0; i <= muestrasArea; i++) {
+                if (miGeneracion != generacion) {
+                    return false;
+                }
+                double x = d.limiteInferior
+                        + (d.limiteSuperior - d.limiteInferior) * i / muestrasArea;
+                area[i] = f.applyAsDouble(x);
+            }
+            d.areaYs = area;
+            d.yLimiteInferior = f.applyAsDouble(d.limiteInferior);
+            d.yLimiteSuperior = f.applyAsDouble(d.limiteSuperior);
+        }
+        return true;
     }
 
     private double leerNumero(CampoTexto campo, String nombre) {
@@ -523,38 +639,21 @@ public class PanelGraficas extends JPanel {
         return Double.parseDouble(valor);
     }
 
-    private void validarExpresion(
-            String funcion, String variable, double minimo, double maximo) {
-
-        String expresion = normalizarFuncion(funcion);
-
-        if (!expresion.matches("[0-9a-zA-Z_+*/^().,\\s-]+")) {
+    private void validarCaracteres(String funcion) {
+        if (!normalizarFuncion(funcion).matches("[0-9a-zA-Z_+*/^().,\\s-]+")) {
             throw new IllegalArgumentException(
                     "La función contiene caracteres no admitidos.");
         }
-
-        boolean encontroValorFinito = false;
-        for (int i = 0; i <= 20; i++) {
-            double x = minimo + (maximo - minimo) * i / 20.0;
-            if (Double.isFinite(evaluar(funcion, variable, x))) {
-                encontroValorFinito = true;
-                break;
-            }
-        }
-
-        if (!encontroValorFinito) {
-            throw new IllegalArgumentException(
-                    "No se pudo obtener ningún valor real finito en el intervalo.");
-        }
     }
 
-    private double evaluar(String funcion, String variable, double valor) {
+    /** Respaldo lento: evalúa un punto con el motor simbólico. */
+    private double evaluarConSymja(String expresion, String variable, double valor) {
         String numero = String.format(Locale.US, "%.12f", valor);
-        String expresion = normalizarFuncion(funcion).replaceAll(
+        String sustituida = expresion.replaceAll(
                 "\\b" + Pattern.quote(variable) + "\\b",
                 "(" + numero + ")");
 
-        IExpr resultado = evaluador.eval("N(" + expresion + ")");
+        IExpr resultado = evaluador.eval("N(" + sustituida + ")");
 
         if (resultado == null) {
             return Double.NaN;
@@ -574,8 +673,40 @@ public class PanelGraficas extends JPanel {
                 .replace("−", "-");
     }
 
+    /** Rango vertical que cubre la curva, con un pequeño margen. */
+    private static double[] calcularRangoY(double[] ys) {
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+
+        for (double y : ys) {
+            if (Double.isFinite(y) && Math.abs(y) < 1.0e6) {
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+        }
+
+        if (!Double.isFinite(minY) || !Double.isFinite(maxY)) {
+            return new double[]{-5, 5};
+        }
+
+        if (Math.abs(maxY - minY) < 1.0e-9) {
+            minY -= 1;
+            maxY += 1;
+        }
+
+        double margen = (maxY - minY) * 0.12;
+        minY -= margen;
+        maxY += margen;
+
+        // Incluir el eje horizontal cuando sea razonable.
+        minY = Math.min(minY, 0);
+        maxY = Math.max(maxY, 0);
+
+        return new double[]{minY, maxY};
+    }
+
     // ==================================================================
-    // Lienzo de la gráfica
+    // Lienzo de la gráfica (solo dibuja lo ya calculado)
     // ==================================================================
     private class GraficaCanvas extends JPanel {
 
@@ -592,26 +723,33 @@ public class PanelGraficas extends JPanel {
         private double limiteInferior;
         private double limiteSuperior;
 
+        // Datos ya calculados (se rellenan en aplicar).
+        private double[] ys;
+        private double[] areaYs;
+        private double rangoYMin = -5;
+        private double rangoYMax = 5;
+        private double yLimiteInf = Double.NaN;
+        private double yLimiteSup = Double.NaN;
+
         GraficaCanvas() {
             setOpaque(false);
         }
 
-        void configurar(
-                String funcion,
-                String variable,
-                double minimo,
-                double maximo,
-                boolean sombrearArea,
-                double limiteInferior,
-                double limiteSuperior) {
-
-            this.funcion = funcion;
-            this.variable = variable;
-            this.minimo = minimo;
-            this.maximo = maximo;
-            this.sombrearArea = sombrearArea;
-            this.limiteInferior = limiteInferior;
-            this.limiteSuperior = limiteSuperior;
+        /** Recibe el resultado del cálculo y vuelve a dibujar. */
+        void aplicar(Datos d) {
+            this.funcion = d.funcion;
+            this.variable = d.variable;
+            this.minimo = d.minimo;
+            this.maximo = d.maximo;
+            this.sombrearArea = d.sombrear;
+            this.limiteInferior = d.limiteInferior;
+            this.limiteSuperior = d.limiteSuperior;
+            this.ys = d.ys;
+            this.areaYs = d.areaYs;
+            this.rangoYMin = d.yMin;
+            this.rangoYMax = d.yMax;
+            this.yLimiteInf = d.yLimiteInferior;
+            this.yLimiteSup = d.yLimiteSuperior;
             this.configurada = true;
             repaint();
         }
@@ -648,14 +786,8 @@ public class PanelGraficas extends JPanel {
                 return;
             }
 
-            double yMin = -5;
-            double yMax = 5;
-
-            if (configurada) {
-                double[] rangoY = calcularRangoY(anchoGrafica);
-                yMin = rangoY[0];
-                yMax = rangoY[1];
-            }
+            double yMin = configurada ? rangoYMin : -5;
+            double yMax = configurada ? rangoYMax : 5;
 
             double escalaX = anchoGrafica / (maximo - minimo);
             double escalaY = altoGrafica / (yMax - yMin);
@@ -833,30 +965,33 @@ public class PanelGraficas extends JPanel {
                 Graphics2D g2, int margenIzquierdo, int margenSuperior,
                 int anchoGrafica, int altoGrafica, double yMin, double yMax) {
 
+            if (areaYs == null) {
+                return;
+            }
+
             Path2D.Double area = new Path2D.Double();
-            int muestras = Math.max(200, anchoGrafica * 2);
+            int muestras = areaYs.length - 1;
+            double escalaX = anchoGrafica / (maximo - minimo);
+            double escalaY = altoGrafica / (yMax - yMin);
+            int baseY = convertirY(
+                    0, yMin, escalaY, margenSuperior, altoGrafica);
             boolean iniciado = false;
 
             for (int i = 0; i <= muestras; i++) {
                 double x = limiteInferior
                         + (limiteSuperior - limiteInferior) * i / muestras;
-                double y = evaluar(funcion, variable, x);
+                double y = areaYs[i];
 
                 if (!Double.isFinite(y) || y < yMin || y > yMax) {
                     iniciado = false;
                     continue;
                 }
 
-                int px = convertirX(
-                        x, anchoGrafica / (maximo - minimo), margenIzquierdo);
-                int py = convertirY(
-                        y, yMin, altoGrafica / (yMax - yMin),
+                int px = convertirX(x, escalaX, margenIzquierdo);
+                int py = convertirY(y, yMin, escalaY,
                         margenSuperior, altoGrafica);
 
                 if (!iniciado) {
-                    int baseY = convertirY(
-                            0, yMin, altoGrafica / (yMax - yMin),
-                            margenSuperior, altoGrafica);
                     area.moveTo(px, baseY);
                     area.lineTo(px, py);
                     iniciado = true;
@@ -866,13 +1001,8 @@ public class PanelGraficas extends JPanel {
             }
 
             if (iniciado) {
-                int baseY = convertirY(
-                        0, yMin, altoGrafica / (yMax - yMin),
-                        margenSuperior, altoGrafica);
                 int pxFinal = convertirX(
-                        limiteSuperior,
-                        anchoGrafica / (maximo - minimo),
-                        margenIzquierdo);
+                        limiteSuperior, escalaX, margenIzquierdo);
                 area.lineTo(pxFinal, baseY);
                 area.closePath();
                 g2.setColor(Tema.conAlfa(ACENTO, 70));
@@ -892,10 +1022,10 @@ public class PanelGraficas extends JPanel {
             g2.setFont(Tema.fuenteMono(Font.BOLD, 10));
 
             dibujarProyeccionLimite(
-                    g2, limiteInferior, margenIzquierdo, margenSuperior,
+                    g2, limiteInferior, yLimiteInf, margenIzquierdo, margenSuperior,
                     anchoGrafica, altoGrafica, yMin, yMax, escalaX, escalaY, ejeX);
             dibujarProyeccionLimite(
-                    g2, limiteSuperior, margenIzquierdo, margenSuperior,
+                    g2, limiteSuperior, yLimiteSup, margenIzquierdo, margenSuperior,
                     anchoGrafica, altoGrafica, yMin, yMax, escalaX, escalaY, ejeX);
 
             g2.setStroke(new BasicStroke(1f));
@@ -908,11 +1038,10 @@ public class PanelGraficas extends JPanel {
         }
 
         private void dibujarProyeccionLimite(
-                Graphics2D g2, double x, int margenIzquierdo, int margenSuperior,
+                Graphics2D g2, double x, double y, int margenIzquierdo, int margenSuperior,
                 int anchoGrafica, int altoGrafica, double yMin, double yMax,
                 double escalaX, double escalaY, int ejeX) {
 
-            double y = evaluar(funcion, variable, x);
             if (!Double.isFinite(y) || y < yMin || y > yMax) {
                 return;
             }
@@ -962,13 +1091,13 @@ public class PanelGraficas extends JPanel {
             Path2D.Double curva = new Path2D.Double();
             boolean iniciado = false;
             double anteriorY = Double.NaN;
-            int muestras = Math.max(500, anchoGrafica * 2);
+            int muestras = ys.length - 1;
             double escalaX = anchoGrafica / (maximo - minimo);
             double escalaY = altoGrafica / (yMax - yMin);
 
             for (int i = 0; i <= muestras; i++) {
                 double x = minimo + (maximo - minimo) * i / muestras;
-                double y = evaluar(funcion, variable, x);
+                double y = ys[i];
 
                 if (!Double.isFinite(y) || y < yMin || y > yMax) {
                     iniciado = false;
@@ -1018,41 +1147,6 @@ public class PanelGraficas extends JPanel {
             return margenSuperior
                     + (int) Math.round((yMin + (altoGrafica / escalaY) - y)
                     * escalaY);
-        }
-
-        private double[] calcularRangoY(int anchoGrafica) {
-            double minY = Double.POSITIVE_INFINITY;
-            double maxY = Double.NEGATIVE_INFINITY;
-            int muestras = Math.max(300, anchoGrafica);
-
-            for (int i = 0; i <= muestras; i++) {
-                double x = minimo + (maximo - minimo) * i / muestras;
-                double y = evaluar(funcion, variable, x);
-
-                if (Double.isFinite(y) && Math.abs(y) < 1.0e6) {
-                    minY = Math.min(minY, y);
-                    maxY = Math.max(maxY, y);
-                }
-            }
-
-            if (!Double.isFinite(minY) || !Double.isFinite(maxY)) {
-                return new double[]{-5, 5};
-            }
-
-            if (Math.abs(maxY - minY) < 1.0e-9) {
-                minY -= 1;
-                maxY += 1;
-            }
-
-            double margen = (maxY - minY) * 0.12;
-            minY -= margen;
-            maxY += margen;
-
-            // Incluir el eje horizontal cuando sea razonable.
-            minY = Math.min(minY, 0);
-            maxY = Math.max(maxY, 0);
-
-            return new double[]{minY, maxY};
         }
 
         @Override

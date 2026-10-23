@@ -28,8 +28,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 public class PanelIntegracion extends JPanel {
 
@@ -48,7 +46,7 @@ public class PanelIntegracion extends JPanel {
 
     private JPanel panelLimites;
     private JLabel resultado;
-    private JLabel vistaPreviaFuncion;
+    private VistaPreviaMatematica vistaPrevia;
     private JLabel estado;
     private IndicadorEstado indicadorEstado;
     private JPanel pasosMatematicos;
@@ -123,10 +121,10 @@ public class PanelIntegracion extends JPanel {
     // ------------------------------------------------------------------
     private JPanel crearBanner() {
         PanelDegradado banner = new PanelDegradado(
-                28, new Color(28, 20, 53), new Color(13, 31, 47));
+                22, new Color(28, 20, 53), new Color(13, 31, 47));
         banner.setLayout(new BorderLayout(20, 0));
-        banner.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        banner.setPreferredSize(new Dimension(0, 132));
+        banner.setBorder(BorderFactory.createEmptyBorder(14, 28, 14, 28));
+        banner.setPreferredSize(new Dimension(0, 124));
 
         EtiquetaPastilla insignia = new EtiquetaPastilla(
                 "CÁLCULO INTEGRAL",
@@ -138,7 +136,7 @@ public class PanelIntegracion extends JPanel {
         insignia.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel titulo = new JLabel("Calculadora de integrales");
-        titulo.setFont(Tema.fuente(Font.BOLD, 26));
+        titulo.setFont(Tema.fuente(Font.BOLD, 24));
         titulo.setForeground(Tema.TEXTO);
         titulo.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -177,36 +175,23 @@ public class PanelIntegracion extends JPanel {
         formulario.add(Tema.crearTituloSeccion("01", "Configurar operación", Tema.VIOLETA));
         formulario.add(Box.createVerticalStrut(22));
 
-        // Función
-        formulario.add(Tema.crearEtiquetaCampo("Función matemática"));
-        formulario.add(Box.createVerticalStrut(8));
-
-        campoFuncion = new CampoTexto();
-        campoFuncion.setFont(Tema.fuenteMono(Font.PLAIN, 16));
-        campoFuncion.setPreferredSize(new Dimension(100, 48));
-        campoFuncion.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        campoFuncion.setAlignmentX(LEFT_ALIGNMENT);
-        campoFuncion.addActionListener(e -> validarOperacion());
-        formulario.add(campoFuncion);
-        formulario.add(Box.createVerticalStrut(8));
-
-        formulario.add(crearFilaEjemplo());
-        formulario.add(Box.createVerticalStrut(18));
-
-        // Vista previa
+        // Vista previa arriba: así la ecuación se ve mientras se escribe.
         formulario.add(Tema.crearEtiquetaCampo("Vista previa matemática"));
         formulario.add(Box.createVerticalStrut(8));
+        vistaPrevia = new VistaPreviaMatematica(84, 26);
+        formulario.add(vistaPrevia);
+        formulario.add(Box.createVerticalStrut(16));
 
-        vistaPreviaFuncion = new JLabel("La expresión aparecerá aquí.");
-        vistaPreviaFuncion.setOpaque(false);
-        vistaPreviaFuncion.setHorizontalAlignment(JLabel.LEFT);
+        // Función (con teclado matemático)
+        campoFuncion = new CampoTexto();
+        campoFuncion.setFont(Tema.fuenteMono(Font.PLAIN, 16));
+        vistaPrevia.vincular(campoFuncion);
+        campoFuncion.addActionListener(e -> validarOperacion());
+        formulario.add(new TecladoMatematico(
+                campoFuncion, Tema.VIOLETA, this::validarOperacion));
+        formulario.add(Box.createVerticalStrut(10));
 
-        RoundedPanel cajaVistaPrevia = Tema.crearCajaInterior(60, Tema.BORDE);
-        cajaVistaPrevia.add(vistaPreviaFuncion, BorderLayout.CENTER);
-        formulario.add(cajaVistaPrevia);
-        configurarVistaPrevia();
-        actualizarVistaPrevia();
-
+        formulario.add(crearFilaEjemplo());
         formulario.add(Box.createVerticalStrut(20));
 
         // Variable
@@ -293,40 +278,6 @@ public class PanelIntegracion extends JPanel {
         fila.add(ejemplo);
         fila.add(Box.createHorizontalGlue());
         return Tema.fijarAlto(fila);
-    }
-
-    private void configurarVistaPrevia() {
-        campoFuncion.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                actualizarVistaPrevia();
-            }
-        });
-    }
-
-    private void actualizarVistaPrevia() {
-        String expresion = campoFuncion.getText().trim();
-        if (expresion.isEmpty()) {
-            vistaPreviaFuncion.setIcon(null);
-            vistaPreviaFuncion.setText("La expresión aparecerá aquí.");
-            vistaPreviaFuncion.setFont(Tema.fuente(Font.ITALIC, 13));
-            vistaPreviaFuncion.setForeground(Tema.TEXTO_SECUNDARIO);
-        } else {
-            RenderizadorMatematico.actualizarEtiqueta(
-                    vistaPreviaFuncion, expresion, Tema.TEXTO, 20);
-        }
-        vistaPreviaFuncion.revalidate();
-        vistaPreviaFuncion.repaint();
     }
 
     private JPanel crearPanelLimites() {
@@ -467,7 +418,7 @@ public class PanelIntegracion extends JPanel {
     // ------------------------------------------------------------------
     private JPanel crearTarjeta() {
         TarjetaSeccion tarjeta
-                = new TarjetaSeccion(24, Tema.PANEL, Tema.VIOLETA);
+                = new TarjetaSeccion(18, Tema.PANEL, Tema.VIOLETA);
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createEmptyBorder(26, 24, 24, 24));
         tarjeta.setAlignmentX(LEFT_ALIGNMENT);

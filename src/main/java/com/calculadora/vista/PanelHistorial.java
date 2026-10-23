@@ -87,11 +87,11 @@ public class PanelHistorial extends JPanel {
     // ------------------------------------------------------------------
     private JPanel crearBanner() {
         PanelDegradado banner = new PanelDegradado(
-                28, new Color(45, 20, 44), new Color(13, 31, 47));
+                22, new Color(45, 20, 44), new Color(13, 31, 47));
         banner.setHalos(ACENTO, Tema.CIAN);
         banner.setLayout(new BorderLayout(20, 0));
-        banner.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        banner.setPreferredSize(new Dimension(0, 132));
+        banner.setBorder(BorderFactory.createEmptyBorder(14, 28, 14, 28));
+        banner.setPreferredSize(new Dimension(0, 124));
 
         EtiquetaPastilla insignia = new EtiquetaPastilla(
                 "REGISTRO DE CÁLCULO",
@@ -103,7 +103,7 @@ public class PanelHistorial extends JPanel {
         insignia.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel titulo = new JLabel("Historial de operaciones");
-        titulo.setFont(Tema.fuente(Font.BOLD, 26));
+        titulo.setFont(Tema.fuente(Font.BOLD, 24));
         titulo.setForeground(Tema.TEXTO);
         titulo.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -137,7 +137,7 @@ public class PanelHistorial extends JPanel {
     // 01 · Operaciones guardadas
     // ------------------------------------------------------------------
     private JPanel crearTarjetaLista() {
-        TarjetaSeccion tarjeta = new TarjetaSeccion(24, Tema.PANEL, ACENTO) {
+        TarjetaSeccion tarjeta = new TarjetaSeccion(18, Tema.PANEL, ACENTO) {
             // Aquí la tarjeta sí ocupa todo el alto disponible.
             @Override
             public Dimension getMaximumSize() {
@@ -155,7 +155,8 @@ public class PanelHistorial extends JPanel {
         JPanel encabezado = new JPanel(new BorderLayout());
         encabezado.setOpaque(false);
         encabezado.add(Tema.crearTituloSeccion(
-                "01", "Operaciones guardadas", ACENTO), BorderLayout.WEST);
+                "01", "Operaciones guardadas", ACENTO), BorderLayout.CENTER);
+        contador.setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 0));
         encabezado.add(contador, BorderLayout.EAST);
 
         // Lista dentro de una caja hundida.

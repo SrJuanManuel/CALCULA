@@ -1,31 +1,37 @@
-
 package com.calculadora.vista;
 
 import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RadialGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
-import java.awt.geom.Ellipse2D;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextAttribute;
+import java.awt.font.TextLayout;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Map;
 import javax.imageio.ImageIO;
-import javax.swing.JWindow;
 import javax.swing.JPanel;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
+import javax.swing.JWindow;
 import javax.swing.Timer;
-import javax.swing.BorderFactory;
 
+/**
+ * Pantalla de bienvenida: fondo liso, el logo, una línea de texto y una
+ * fina línea de progreso. Cada elemento aparece con un ligero desvanecido,
+ * uno tras otro, para que la entrada se sienta tranquila.
+ */
 public class PantallaBienvenida extends JWindow {
 
-    private static final int ANCHO = 620;
-    private static final int ALTO = 380;
-    private static final int DURACION = 3000;
+    private static final int ANCHO = 860;
+    private static final int ALTO = 520;
+    private static final int DURACION = 3200;
 
     private final PanelAnimado panel;
     private final Timer temporizador;
@@ -44,7 +50,8 @@ public class PantallaBienvenida extends JWindow {
         setSize(ANCHO, ALTO);
         setLocationRelativeTo(null);
 
-        temporizador = new Timer(30, this::actualizarAnimacion);
+        // ~60 fotogramas por segundo.
+        temporizador = new Timer(16, this::actualizarAnimacion);
     }
 
     private void cargarLogo() {
@@ -103,21 +110,32 @@ public class PantallaBienvenida extends JWindow {
 
         private double progreso = 0;
 
-        private final Color fondo = new Color(17, 19, 24);
-        private final Color violeta = new Color(139, 92, 246);
-        private final Color cian = new Color(34, 211, 238);
-        private final Color blanco = new Color(245, 245, 250);
-        private final Color secundario = new Color(150, 155, 170);
+        private final Font fuenteMarca = conEspaciado(
+                Tema.fuente(Font.PLAIN, 13), 0.42f);
+        private final Font fuenteFrase = Tema.fuente(Font.PLAIN, 15);
+        private final Font fuenteEstado = conEspaciado(
+                Tema.fuente(Font.PLAIN, 10), 0.18f);
 
-        public PanelAnimado() {
+        PanelAnimado() {
             setOpaque(true);
-            setBackground(fondo);
+            setBackground(Tema.FONDO);
             setLayout(null);
         }
 
-        public void setProgreso(double progreso) {
+        void setProgreso(double progreso) {
             this.progreso = progreso;
             repaint();
+        }
+
+        private Font conEspaciado(Font base, float espaciado) {
+            return base.deriveFont(
+                    Map.of(TextAttribute.TRACKING, espaciado));
+        }
+
+        /** Tramo [ini, fin] del progreso total, de 0 a 1, con suavizado. */
+        private float tramo(double ini, double fin) {
+            double t = Math.max(0, Math.min(1, (progreso - ini) / (fin - ini)));
+            return (float) (t * t * (3 - 2 * t));
         }
 
         @Override
@@ -125,221 +143,140 @@ public class PantallaBienvenida extends JWindow {
             super.paintComponent(g);
 
             Graphics2D g2 = (Graphics2D) g.create();
-
-            g2.setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON
-            );
-
-            g2.setRenderingHint(
-                    RenderingHints.KEY_RENDERING,
-                    RenderingHints.VALUE_RENDER_QUALITY
-            );
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
 
             int ancho = getWidth();
             int alto = getHeight();
 
-            // Fondo oscuro.
-            g2.setColor(fondo);
+            // Fondo liso con un resplandor muy tenue.
+            g2.setColor(Tema.FONDO);
             g2.fillRect(0, 0, ancho, alto);
+            resplandor(g2, ancho * 0.5f, alto * 0.42f, ancho * 0.55f,
+                    Tema.VIOLETA, 30);
+            resplandor(g2, ancho * 0.86f, alto * 1.02f, ancho * 0.38f,
+                    Tema.CIAN, 14);
 
-            // Resplandores decorativos.
-            dibujarResplandor(
-                    g2,
-                    ancho / 2 - 145,
-                    alto / 2 - 115,
-                    290,
-                    violeta,
-                    0.13f
-            );
+            int centroX = ancho / 2;
 
-            dibujarResplandor(
-                    g2,
-                    ancho / 2 + 105,
-                    alto / 2 - 35,
-                    220,
-                    cian,
-                    0.08f
-            );
-
-            // Líneas decorativas superiores.
-            g2.setColor(new Color(139, 92, 246, 70));
-            g2.setStroke(new BasicStroke(1.2f));
-            g2.drawLine(35, 35, 115, 35);
-
-            g2.setColor(new Color(34, 211, 238, 70));
-            g2.drawLine(ancho - 115, 35, ancho - 35, 35);
-
-            // Aparición progresiva del contenido.
-            float alpha = (float) Math.min(1.0, progreso * 2.5);
-
-            g2.setComposite(
-                    AlphaComposite.getInstance(
-                            AlphaComposite.SRC_OVER,
-                            alpha
-                    )
-            );
-
-            // Logo centrado.
+            // Logo: aparece desde abajo, con desvanecido.
+            float aLogo = tramo(0.02, 0.38);
             if (logo != null) {
-                int maxAncho = 270;
-                int maxAlto = 100;
-
+                int maxAncho = 400;
+                int maxAlto = 130;
                 double escala = Math.min(
                         maxAncho / (double) logo.getWidth(),
-                        maxAlto / (double) logo.getHeight()
-                );
-
-                int logoAncho = (int) (logo.getWidth() * escala);
-                int logoAlto = (int) (logo.getHeight() * escala);
-
-                int x = (ancho - logoAncho) / 2;
-                int y = 95 - (int) (12 * (1 - alpha));
-
-                g2.drawImage(
-                        logo,
-                        x,
-                        y,
-                        logoAncho,
-                        logoAlto,
-                        null
-                );
+                        maxAlto / (double) logo.getHeight());
+                int lw = (int) (logo.getWidth() * escala);
+                int lh = (int) (logo.getHeight() * escala);
+                int y = 168 + (int) (14 * (1 - aLogo));
+                g2.setComposite(AlphaComposite.getInstance(
+                        AlphaComposite.SRC_OVER, aLogo));
+                g2.drawImage(logo, centroX - lw / 2, y, lw, lh, null);
             } else {
-                g2.setFont(new Font("SansSerif", Font.BOLD, 43));
-                g2.setColor(blanco);
-
+                g2.setComposite(AlphaComposite.getInstance(
+                        AlphaComposite.SRC_OVER, aLogo));
+                g2.setFont(Tema.fuente(Font.BOLD, 64));
+                g2.setColor(Tema.TEXTO);
                 String nombre = "calcula";
-                int textoAncho = g2.getFontMetrics()
-                        .stringWidth(nombre);
-
-                g2.drawString(
-                        nombre,
-                        (ancho - textoAncho) / 2,
-                        145
-                );
-
-                // Dos cuadrados distintivos del logo.
-                g2.setColor(blanco);
-                g2.fillRect(ancho / 2 + 92, 100, 8, 8);
-                g2.fillRect(ancho / 2 + 103, 100, 8, 8);
+                g2.drawString(nombre,
+                        centroX - g2.getFontMetrics().stringWidth(nombre) / 2,
+                        236);
             }
 
-            // Nombre de la aplicación.
-            g2.setFont(new Font("SansSerif", Font.BOLD, 17));
-            g2.setColor(blanco);
-
-            String titulo = "LABORATORIO MATEMÁTICO";
-            int tituloAncho = g2.getFontMetrics()
-                    .stringWidth(titulo);
-
-            g2.drawString(
-                    titulo,
-                    (ancho - tituloAncho) / 2,
-                    222
-            );
-
-            // Descripción.
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            g2.setColor(secundario);
-
-            String descripcion =
-                    "Integra, deriva y visualiza tus funciones.";
-
-            int descripcionAncho = g2.getFontMetrics()
-                    .stringWidth(descripcion);
-
-            g2.drawString(
-                    descripcion,
-                    (ancho - descripcionAncho) / 2,
-                    247
-            );
-
-            // Barra de progreso.
-            int barraAncho = 230;
-            int barraAlto = 4;
-            int barraX = (ancho - barraAncho) / 2;
-            int barraY = 292;
-
-            g2.setComposite(AlphaComposite.SrcOver);
-
-            g2.setColor(new Color(48, 51, 64));
-            g2.fillRoundRect(
-                    barraX,
-                    barraY,
-                    barraAncho,
-                    barraAlto,
-                    8,
-                    8
-            );
-
-            int progresoAncho = (int) (barraAncho * progreso);
-
+            // Fina línea de acento entre el logo y el texto.
+            float aLinea = tramo(0.22, 0.5);
+            g2.setComposite(AlphaComposite.getInstance(
+                    AlphaComposite.SRC_OVER, aLinea));
+            int mitadLinea = (int) (28 * aLinea);
             g2.setPaint(new java.awt.GradientPaint(
-                    barraX,
-                    barraY,
-                    violeta,
-                    barraX + barraAncho,
-                    barraY,
-                    cian
-            ));
+                    centroX - 28, 0, Tema.conAlfa(Tema.VIOLETA, 0),
+                    centroX, 0, Tema.conAlfa(Tema.VIOLETA, 200)));
+            g2.fillRect(centroX - mitadLinea, 322, mitadLinea, 1);
+            g2.setPaint(new java.awt.GradientPaint(
+                    centroX, 0, Tema.conAlfa(Tema.CIAN, 200),
+                    centroX + 28, 0, Tema.conAlfa(Tema.CIAN, 0)));
+            g2.fillRect(centroX, 322, mitadLinea, 1);
 
-            g2.fillRoundRect(
-                    barraX,
-                    barraY,
-                    progresoAncho,
-                    barraAlto,
-                    8,
-                    8
-            );
+            // Marca y frase.
+            float aMarca = tramo(0.3, 0.6);
+            g2.setComposite(AlphaComposite.getInstance(
+                    AlphaComposite.SRC_OVER, aMarca));
+            textoCentrado(g2, "LABORATORIO MATEMÁTICO", fuenteMarca,
+                    Tema.TEXTO, centroX, 354);
 
-            // Pie de pantalla.
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
-            g2.setColor(new Color(105, 110, 125));
+            float aFrase = tramo(0.42, 0.72);
+            g2.setComposite(AlphaComposite.getInstance(
+                    AlphaComposite.SRC_OVER, aFrase));
+            textoCentrado(g2, "Integra, deriva y visualiza tus funciones.",
+                    fuenteFrase, Tema.TEXTO_SECUNDARIO, centroX, 384);
 
-            String pie = "CALCULA  |  MATEMÁTICA SIMBÓLICA";
-            int pieAncho = g2.getFontMetrics().stringWidth(pie);
+            // Línea de progreso.
+            float aBarra = tramo(0.1, 0.3);
+            g2.setComposite(AlphaComposite.getInstance(
+                    AlphaComposite.SRC_OVER, aBarra));
+            int barraAncho = 220;
+            int barraX = centroX - barraAncho / 2;
+            int barraY = alto - 74;
+            g2.setColor(new Color(255, 255, 255, 22));
+            g2.fillRect(barraX, barraY, barraAncho, 2);
 
-            g2.drawString(
-                    pie,
-                    (ancho - pieAncho) / 2,
-                    340
-            );
+            float avance = tramo(0.05, 0.97);
+            int rellenoAncho = (int) (barraAncho * avance);
+            g2.setPaint(new java.awt.GradientPaint(
+                    barraX, 0, Tema.VIOLETA,
+                    barraX + barraAncho, 0, Tema.CIAN));
+            g2.fillRect(barraX, barraY, rellenoAncho, 2);
+
+            String estado = progreso < 0.4 ? "CARGANDO MOTOR DE CÁLCULO"
+                    : progreso < 0.8 ? "PREPARANDO HERRAMIENTAS" : "LISTO";
+            textoCentrado(g2, estado, fuenteEstado,
+                    new Color(120, 125, 141), centroX, barraY + 26);
+
+            // Salida: todo se funde con el fondo antes de abrir la aplicación.
+            float salida = tramo(0.93, 1.0);
+            if (salida > 0) {
+                g2.setComposite(AlphaComposite.getInstance(
+                        AlphaComposite.SRC_OVER, salida));
+                g2.setColor(Tema.FONDO);
+                g2.fillRect(0, 0, ancho, alto);
+            }
+
+            // Borde de una línea alrededor de toda la ventana.
+            g2.setComposite(AlphaComposite.SrcOver);
+            g2.setColor(Tema.BORDE);
+            g2.drawRect(0, 0, ancho - 1, alto - 1);
 
             g2.dispose();
         }
 
-        private void dibujarResplandor(
-                Graphics2D g2,
-                int centroX,
-                int centroY,
-                int diametro,
-                Color color,
-                float intensidad
-        ) {
-            for (int i = 10; i >= 1; i--) {
-                float alpha = intensidad * (11 - i) / 11f;
-
-                g2.setComposite(
-                        AlphaComposite.getInstance(
-                                AlphaComposite.SRC_OVER,
-                                alpha
-                        )
-                );
-
-                int tamano = diametro * i / 10;
-                int x = centroX - tamano / 2;
-                int y = centroY - tamano / 2;
-
-                g2.setColor(color);
-                g2.fill(new Ellipse2D.Double(
-                        x,
-                        y,
-                        tamano,
-                        tamano
-                ));
-            }
-
+        private void resplandor(Graphics2D g2, float x, float y,
+                float radio, Color color, int alfa) {
+            Composite previo = g2.getComposite();
             g2.setComposite(AlphaComposite.SrcOver);
+            g2.setPaint(new RadialGradientPaint(
+                    new Point2D.Float(x, y), radio,
+                    new float[]{0f, 1f},
+                    new Color[]{Tema.conAlfa(color, alfa),
+                        Tema.conAlfa(color, 0)}));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.setComposite(previo);
+        }
+
+        /** Dibuja texto centrado respetando el espaciado entre letras. */
+        private void textoCentrado(Graphics2D g2, String texto, Font fuente,
+                Color color, int centroX, int baseY) {
+            FontRenderContext frc = g2.getFontRenderContext();
+            TextLayout layout = new TextLayout(texto, fuente, frc);
+            float x = centroX - layout.getAdvance() / 2f;
+            g2.setColor(color);
+            layout.draw(g2, x, baseY);
         }
     }
 }

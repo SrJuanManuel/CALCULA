@@ -143,7 +143,7 @@ public class VentanaPrincipal extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setPaint(new GradientPaint(0, 0,
-                        Tema.conAlfa(seccionActual.acento(), 24),
+                        Tema.conAlfa(seccionActual.acento(), 14),
                         0, 260, Tema.conAlfa(seccionActual.acento(), 0)));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
@@ -277,14 +277,14 @@ public class VentanaPrincipal extends JFrame {
                         new Point2D.Float(getWidth() * 0.85f, 0f),
                         Math.max(getWidth() * 0.5f, 1f),
                         new float[]{0f, 1f},
-                        new Color[]{Tema.conAlfa(seccionActual.acento(), 30),
+                        new Color[]{Tema.conAlfa(seccionActual.acento(), 18),
                             Tema.conAlfa(seccionActual.acento(), 0)}));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.setPaint(new RadialGradientPaint(
                         new Point2D.Float(getWidth() * 0.05f, getHeight()),
                         Math.max(getWidth() * 0.4f, 1f),
                         new float[]{0f, 1f},
-                        new Color[]{Tema.conAlfa(seccionActual.acentoSecundario(), 12),
+                        new Color[]{Tema.conAlfa(seccionActual.acentoSecundario(), 6),
                             Tema.conAlfa(seccionActual.acentoSecundario(), 0)}));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
@@ -296,7 +296,7 @@ public class VentanaPrincipal extends JFrame {
         encabezado.setOpaque(false);
         encabezado.setBorder(BorderFactory.createEmptyBorder(20, 30, 16, 30));
 
-        tituloSeccion.setFont(Tema.fuente(Font.BOLD, 24));
+        tituloSeccion.setFont(Tema.fuente(Font.BOLD, 22));
         tituloSeccion.setForeground(Tema.TEXTO);
 
         puntoTitulo = new IndicadorEstado(INICIO.acento());
@@ -331,18 +331,15 @@ public class VentanaPrincipal extends JFrame {
                 Color b = seccionActual.acentoSecundario();
                 int ancho = Math.max(1, getWidth() - 60);
                 float xFin = Math.max(31, getWidth() - 30);
-                // Resplandor suave bajo la línea.
-                g2.setPaint(new GradientPaint(30, 0, Tema.conAlfa(a, 60),
-                        xFin, 0, Tema.conAlfa(b, 60)));
-                g2.fillRoundRect(30, 0, ancho, 4, 4, 4);
-                // Línea principal.
-                g2.setPaint(new GradientPaint(30, 0, a, xFin, 0, b));
-                g2.fillRoundRect(30, 0, ancho, 2, 2, 2);
+                // Un solo filo fino que se desvanece hacia la derecha.
+                g2.setPaint(new GradientPaint(30, 0, Tema.conAlfa(a, 150),
+                        xFin, 0, Tema.conAlfa(b, 40)));
+                g2.fillRect(30, 1, ancho, 1);
                 g2.dispose();
             }
         };
         lineaAcento.setOpaque(false);
-        lineaAcento.setPreferredSize(new Dimension(1, 4));
+        lineaAcento.setPreferredSize(new Dimension(1, 3));
         encabezadoContenedor.add(lineaAcento, BorderLayout.SOUTH);
 
         contenido.setOpaque(false);
@@ -365,7 +362,7 @@ public class VentanaPrincipal extends JFrame {
         pagina.setOpaque(false);
 
         PanelDegradado bienvenida = new PanelDegradado(
-                32, new Color(28, 20, 53), new Color(13, 31, 47));
+                24, new Color(28, 20, 53), new Color(13, 31, 47));
         bienvenida.setLayout(new BorderLayout(24, 10));
         bienvenida.setBorder(BorderFactory.createEmptyBorder(26, 32, 26, 26));
         bienvenida.setPreferredSize(new Dimension(0, 280));
@@ -482,7 +479,7 @@ public class VentanaPrincipal extends JFrame {
 
         Color acento = seccion.acento();
 
-        TarjetaPremium tarjeta = new TarjetaPremium(24, Tema.PANEL, acento);
+        TarjetaPremium tarjeta = new TarjetaPremium(18, Tema.PANEL, acento);
         tarjeta.setLayout(new BoxLayout(tarjeta, BoxLayout.Y_AXIS));
         tarjeta.setBorder(BorderFactory.createEmptyBorder(24, 20, 22, 20));
         tarjeta.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -791,18 +788,16 @@ public class VentanaPrincipal extends JFrame {
 
             // Brillo interior con el color de acento.
             g2.setPaint(new GradientPaint(0, 0,
-                    Tema.conAlfa(acento, hover ? 44 : 24),
-                    0, h * 0.65f, Tema.conAlfa(acento, 0)));
+                    Tema.conAlfa(acento, hover ? 28 : 10),
+                    0, h * 0.55f, Tema.conAlfa(acento, 0)));
             g2.fillRoundRect(0, 0, w - 1, h - 1, radio, radio);
 
             // Borde.
-            g2.setColor(Tema.conAlfa(acento, hover ? 190 : 95));
-            g2.setStroke(new BasicStroke(hover ? 1.6f : 1.0f));
+            g2.setColor(hover ? Tema.conAlfa(acento, 150)
+                    : Tema.mezclar(Tema.BORDE, acento, 0.12f));
+            g2.setStroke(new BasicStroke(1f));
             g2.drawRoundRect(0, 0, w - 1, h - 1, radio, radio);
 
-            // Barra de acento superior.
-            g2.setColor(Tema.conAlfa(acento, hover ? 180 : 80));
-            g2.fillRoundRect(18, 0, Math.max(40, w / 3), 3, 3, 3);
             g2.dispose();
             super.paintComponent(g);
         }

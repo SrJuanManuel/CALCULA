@@ -34,9 +34,17 @@ public final class RenderizadorMatematico {
         latex = latex.replace("∞", "\\infty ");
         latex = latex.replace("*", " \\cdot ");
 
+        // Constantes y raíces que escribe el teclado matemático.
+        latex = convertirRaices(latex);
+        latex = latex.replaceAll("\\bPi\\b", "\\\\pi ");
+        latex = latex.replaceAll("\\bE\\b", "e");
+
+        // Logaritmo decimal: Log(10, x) -> log₁₀(x).
+        latex = latex.replaceAll("\\bLog\\(\\s*10\\s*,\\s*", "\\\\log_{10}(");
+
         // Funciones matemáticas habituales.
         latex = latex.replaceAll(
-                "(?i)\\b(sin|cos|tan|cot|sec|csc|log|ln|exp)\\b",
+                "(?i)\\b(sin|cos|tan|cot|sec|csc|log|ln|exp)\\b(?!_)",
                 "\\\\mathrm{$1}"
         );
 
@@ -62,6 +70,36 @@ public final class RenderizadorMatematico {
         latex = latex.replace(" - ", " - ");
 
         return latex;
+    }
+
+    /**
+     * Convierte Sqrt(...) en \sqrt{...}, respetando paréntesis anidados.
+     * Si el paréntesis aún no está cerrado (se está escribiendo), cierra la
+     * raíz al final para que la vista previa no falle a mitad de escritura.
+     */
+    private static String convertirRaices(String texto) {
+        int inicio = texto.indexOf("Sqrt(");
+        while (inicio >= 0) {
+            int profundidad = 1;
+            int i = inicio + 5;
+            while (i < texto.length() && profundidad > 0) {
+                char c = texto.charAt(i);
+                if (c == '(') {
+                    profundidad++;
+                } else if (c == ')') {
+                    profundidad--;
+                }
+                i++;
+            }
+            boolean cerrado = profundidad == 0;
+            String interior = texto.substring(
+                    inicio + 5, cerrado ? i - 1 : texto.length());
+            String resto = cerrado ? texto.substring(i) : "";
+            texto = texto.substring(0, inicio)
+                    + "\\sqrt{" + interior + "}" + resto;
+            inicio = texto.indexOf("Sqrt(");
+        }
+        return texto;
     }
 
     /**

@@ -182,34 +182,38 @@ public final class Tema {
         return caja;
     }
 
-    /** Título de sección: número en cápsula con el color de acento + título. */
+    /** Título de sección: número discreto en el color de acento + título. */
     public static JPanel crearTituloSeccion(
             String numero, String titulo, Color acento) {
-        RoundedPanel capsula = new RoundedPanel(10, conAlfa(acento, 55));
-        capsula.setColorBorde(conAlfa(acento, 120));
-        capsula.setLayout(new GridBagLayout());
-        Dimension tamano = new Dimension(36, 26);
-        capsula.setPreferredSize(tamano);
-        capsula.setMinimumSize(tamano);
-        capsula.setMaximumSize(tamano);
-
         JLabel numeroLabel = new JLabel(numero);
-        numeroLabel.setFont(fuenteMono(Font.BOLD, 12));
-        numeroLabel.setForeground(mezclar(acento, Color.WHITE, 0.6f));
-        capsula.add(numeroLabel);
+        numeroLabel.setFont(fuenteMono(Font.PLAIN, 12));
+        numeroLabel.setForeground(mezclar(acento, Color.WHITE, 0.35f));
 
         JLabel tituloLabel = new JLabel(titulo);
-        tituloLabel.setFont(fuente(Font.BOLD, 17));
+        tituloLabel.setFont(fuente(Font.BOLD, 16));
         tituloLabel.setForeground(TEXTO);
+
+        // Línea fina que cierra el título y separa el contenido.
+        JPanel linea = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(new Color(255, 255, 255, 14));
+                g.fillRect(0, getHeight() / 2, getWidth(), 1);
+            }
+        };
+        linea.setOpaque(false);
+        linea.setPreferredSize(new Dimension(40, 20));
+        linea.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 
         JPanel fila = new JPanel();
         fila.setOpaque(false);
         fila.setLayout(new BoxLayout(fila, BoxLayout.X_AXIS));
         fila.setAlignmentX(JComponent.LEFT_ALIGNMENT);
-        fila.add(capsula);
+        fila.add(numeroLabel);
         fila.add(Box.createHorizontalStrut(10));
         fila.add(tituloLabel);
-        fila.add(Box.createHorizontalGlue());
+        fila.add(Box.createHorizontalStrut(14));
+        fila.add(linea);
         return fijarAlto(fila);
     }
 
@@ -330,19 +334,17 @@ public final class Tema {
             int w = getWidth();
             int h = getHeight();
 
+            // Superficie plana con un velo mínimo del acento y borde fino.
             g2.setColor(colorBase);
             g2.fillRoundRect(0, 0, w - 1, h - 1, radio, radio);
 
-            g2.setPaint(new GradientPaint(0, 0, conAlfa(acento, 24),
-                    0, h * 0.6f, conAlfa(acento, 0)));
+            g2.setPaint(new GradientPaint(0, 0, conAlfa(acento, 10),
+                    0, h * 0.45f, conAlfa(acento, 0)));
             g2.fillRoundRect(0, 0, w - 1, h - 1, radio, radio);
 
-            g2.setColor(conAlfa(acento, 80));
+            g2.setColor(mezclar(BORDE, acento, 0.12f));
             g2.setStroke(new BasicStroke(1f));
             g2.drawRoundRect(0, 0, w - 1, h - 1, radio, radio);
-
-            g2.setColor(conAlfa(acento, 120));
-            g2.fillRoundRect(18, 0, Math.max(40, w / 4), 3, 3, 3);
 
             g2.dispose();
             super.paintComponent(g);
@@ -391,7 +393,7 @@ public final class Tema {
                     new Point2D.Float(w * 0.18f, 0f),
                     Math.max(w * 0.45f, 1f),
                     new float[]{0f, 1f},
-                    new Color[]{conAlfa(haloArriba, 70),
+                    new Color[]{conAlfa(haloArriba, 38),
                         conAlfa(haloArriba, 0)}));
             g2.fillRect(0, 0, w, h);
 
@@ -399,17 +401,13 @@ public final class Tema {
                     new Point2D.Float(w * 0.88f, h),
                     Math.max(w * 0.40f, 1f),
                     new float[]{0f, 1f},
-                    new Color[]{conAlfa(haloAbajo, 45),
+                    new Color[]{conAlfa(haloAbajo, 22),
                         conAlfa(haloAbajo, 0)}));
             g2.fillRect(0, 0, w, h);
 
-            g2.setPaint(new GradientPaint(0, 0, conAlfa(haloArriba, 150),
-                    w, 0, conAlfa(haloAbajo, 150)));
-            g2.fillRect(0, 0, w, 2);
-
             g2.setClip(clipPrevio);
 
-            g2.setColor(conAlfa(haloArriba, 55));
+            g2.setColor(conAlfa(haloArriba, 38));
             g2.setStroke(new BasicStroke(1f));
             g2.draw(forma);
             g2.dispose();
@@ -440,15 +438,12 @@ public final class Tema {
             int w = getWidth();
             int h = getHeight();
 
+            // Color plano: sin brillo superior.
             g2.setColor(getBackground());
             g2.fillRoundRect(0, 0, w, h, radio, radio);
 
-            g2.setPaint(new GradientPaint(0, 0, new Color(255, 255, 255, 42),
-                    0, h, new Color(255, 255, 255, 0)));
-            g2.fillRoundRect(0, 0, w, h, radio, radio);
-
             if (getModel().isRollover() && !getModel().isPressed()) {
-                g2.setColor(new Color(255, 255, 255, 26));
+                g2.setColor(new Color(255, 255, 255, 22));
                 g2.fillRoundRect(0, 0, w, h, radio, radio);
             }
             if (getModel().isPressed()) {
