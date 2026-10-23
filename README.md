@@ -50,8 +50,6 @@ El proyecto utiliza Maven para gestionar sus dependencias y puede distribuirse p
 
 ## Capturas de pantalla
 
-Puedes guardar capturas reales en `docs/screenshots/` y usar las rutas siguientes. Si aún no tienes las imágenes, elimina temporalmente este apartado o añade las capturas más adelante.
-
 <div align="center">
   <img src="docs/screenshots/inicio.png" alt="Pantalla de inicio de CALCULA" width="700">
   <p><em>Pantalla de inicio</em></p>
@@ -89,7 +87,7 @@ Usa el instalador de Windows o la carpeta portátil publicada en **Releases**. L
 1. Clona el repositorio:
 
    ```bash
-   git clone https://github.com/USUARIO/CALCULA.git
+   git clone [https://github.com/SrJuanManuel/CALCULA.git]
    ```
 
 2. Entra en la carpeta:
