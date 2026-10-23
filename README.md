@@ -108,12 +108,10 @@ Usa el instalador de Windows o la carpeta portátil publicada en **Releases**. L
 
 ## Descargar CALCULA
 
-Consulta **Releases** en este repositorio para encontrar las versiones publicadas:
+Descarga la última versión de CALCULA desde la sección de [Releases](https://github.com/SrJuanManuel/CALCULA/releases) de este repositorio.
 
-- **Instalador de Windows:** archivo `.exe` para instalar la aplicación.
-- **Versión portátil:** carpeta de la aplicación con su runtime incluido.
-
-Cuando publiques tu primera versión, podrás adjuntar allí los archivos de distribución.
+- **Instalador para Windows (`.exe`):** instala CALCULA en tu computadora, con acceso directo y entorno de ejecución de Java incluido.
+- **Versión ejecutable (`.jar`):** permite ejecutar la aplicación con una instalación compatible de Java.
 
 ## Estructura general
 
