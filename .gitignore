@@ -1,0 +1,22 @@
+# Archivos generados por Maven
+target/
+
+# Aplicaciones empaquetadas
+dist/
+dist-input/
+instalador/
+
+# Archivos temporales de NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+build/
+
+# Archivos temporales de Windows
+Thumbs.db
+Desktop.ini
+*.log
+
+# Configuración local de herramientas
+.idea/
+.vscode/
