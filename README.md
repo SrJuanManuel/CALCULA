@@ -35,8 +35,6 @@ El proyecto utiliza Maven para gestionar sus dependencias y puede distribuirse p
 - **Teclado matemático:** entrada de expresiones mediante botones de símbolos y funciones, si está disponible en la versión publicada.
 - **Distribución para Windows:** empaquetado con `jpackage`.
 
-> Las funciones concretas pueden variar según la versión publicada. Consulta el código fuente para conocer el comportamiento de cada módulo.
-
 ## Tecnologías
 
 | Tecnología | Uso |
@@ -87,7 +85,7 @@ Usa el instalador de Windows o la carpeta portátil publicada en **Releases**. L
 1. Clona el repositorio:
 
    ```bash
-   git clone [https://github.com/SrJuanManuel/CALCULA.git]
+   git clone https://github.com/SrJuanManuel/CALCULA.git
    ```
 
 2. Entra en la carpeta:
@@ -107,8 +105,6 @@ Usa el instalador de Windows o la carpeta portátil publicada en **Releases**. L
    ```bash
    java -jar target/CALCULA.jar
    ```
-
-> Sustituye `USUARIO` por tu usuario de GitHub. Si el JAR se genera en otra ruta o prefieres ejecutar desde NetBeans, abre el proyecto Maven y ejecuta la clase principal `com.calculadora.CalculadoraIntegrales`.
 
 ## Descargar CALCULA
 
@@ -140,8 +136,6 @@ CalculadoraIntegrales/
 └── README.md
 ```
 
-> La estructura es ilustrativa. Ajusta los nombres de paquetes y carpetas para que coincidan con tu proyecto real.
-
 ## Objetivo
 
 CALCULA busca reunir herramientas de cálculo matemático en una interfaz accesible, combinando resultados simbólicos, representación gráfica y consulta de operaciones anteriores.
@@ -153,7 +147,7 @@ Desarrollado como proyecto académico de programación.
 - **Autores:** `Juan Gaspar Manuel Pablo Sisay`
                `Henry Bernabé Chiroy Sulugüí`
                `Guillermo Josue Garcia de Leon`
-- **Institución:** `Universidad Mariano Gálvez de Guatemala` (opcional)
+- **Institución:** `Universidad Mariano Gálvez de Guatemala`
 
 
 <div align="center">
